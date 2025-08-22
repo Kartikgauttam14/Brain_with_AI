@@ -1,0 +1,325 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Neural BCI Backend API",
+    "description": "RESTful API for Neural Signal Processing Arduino AI System",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Neural BCI Team",
+      "email": "support@neuralbci.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the API is running",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {"type": "string"},
+                    "timestamp": {"type": "string"},
+                    "version": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register User",
+        "description": "Register a new user account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {"type": "string"},
+                  "email": {"type": "string"},
+                  "password": {"type": "string"}
+                },
+                "required": ["username", "email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User registered successfully"
+          },
+          "400": {
+            "description": "Username or email already exists"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Login User",
+        "description": "Authenticate user and get access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {"type": "string"},
+                  "password": {"type": "string"}
+                },
+                "required": ["username", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {"type": "string"},
+                    "token_type": {"type": "string"}
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/sessions": {
+      "post": {
+        "summary": "Create EEG Session",
+        "description": "Create a new EEG recording session",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_type": {
+                    "type": "string",
+                    "enum": ["training", "testing", "calibration"]
+                  },
+                  "duration_seconds": {"type": "integer"},
+                  "notes": {"type": "string"}
+                },
+                "required": ["session_type", "duration_seconds"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session created successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get User Sessions",
+        "description": "Get all sessions for the authenticated user",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {"type": "integer", "default": 0}
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {"type": "integer", "default": 100}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sessions"
+          }
+        }
+      }
+    },
+    "/api/data/batch": {
+      "post": {
+        "summary": "Upload EEG Data Batch",
+        "description": "Upload a batch of EEG data points",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {"type": "integer"},
+                  "data_points": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "timestamp_ms": {"type": "integer"},
+                        "channel_data": {
+                          "type": "array",
+                          "items": {"type": "number"},
+                          "minItems": 8,
+                          "maxItems": 8
+                        },
+                        "signal_quality": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Data uploaded successfully"
+          }
+        }
+      }
+    },
+    "/api/predict": {
+      "post": {
+        "summary": "Make Prediction",
+        "description": "Make a prediction based on EEG data window",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "query",
+            "required": true,
+            "schema": {"type": "integer"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "8 channels x window_size samples",
+                "items": {
+                  "type": "array",
+                  "items": {"type": "number"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prediction made successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "prediction_id": {"type": "integer"},
+                    "predicted_class": {"type": "string"},
+                    "confidence_score": {"type": "number"},
+                    "processing_time_ms": {"type": "integer"},
+                    "features": {
+                      "type": "array",
+                      "items": {"type": "number"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status": {
+      "get": {
+        "summary": "Get System Status",
+        "description": "Get current system status and metrics",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "System status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "is_connected": {"type": "boolean"},
+                    "signal_strength": {"type": "number"},
+                    "current_command": {"type": "string"},
+                    "battery_level": {"type": "number"},
+                    "active_sessions": {"type": "integer"},
+                    "total_predictions": {"type": "integer"},
+                    "system_uptime": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/train": {
+      "post": {
+        "summary": "Train Model",
+        "description": "Start model training in background",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Training started"
+          }
+        }
+      }
+    },
+    "/ws/realtime": {
+      "get": {
+        "summary": "WebSocket Real-time Connection",
+        "description": "WebSocket endpoint for real-time data streaming"
+      }
+    },
+    "/ws/arduino": {
+      "get": {
+        "summary": "Arduino WebSocket Connection",
+        "description": "WebSocket endpoint for Arduino device communication"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
