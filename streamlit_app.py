@@ -13,8 +13,7 @@ from typing import Dict, List, Optional
 import logging
 import google.generativeai as genai
 import os
-from google_auth_oauthlib.flow import Flow
-from google.oauth2 import credentials
+
 
 # --- Initialize session state variables at the very top ---
 if 'is_connected' not in st.session_state:
