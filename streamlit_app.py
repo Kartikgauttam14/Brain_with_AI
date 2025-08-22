@@ -302,7 +302,7 @@ API_BASE_URL = "http://localhost:8000/api"
 WS_URL = "ws://localhost:8000/ws/realtime"
 
 # Configure Google Gemini API
-GOOGLE_API_KEY = "AIzaSyDofA0FLskiokUWyx7wpyJmjHSrC6msVYI"
+GOOGLE_API_KEY = "Paste your Google API key here"
 
 # Try to import Google Generative AI, handle gracefully if not available
 try:
