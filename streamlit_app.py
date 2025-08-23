@@ -13,7 +13,8 @@ from typing import Dict, List, Optional
 import logging
 import google.generativeai as genai
 import os
-
+from google_auth_oauthlib.flow import Flow
+from google.oauth2 import credentials
 
 # --- Initialize session state variables at the very top ---
 if 'is_connected' not in st.session_state:
@@ -322,24 +323,24 @@ else:
     model = None
 
 # Google OAuth Configuration
-CLIENT_SECRETS_FILE = "client_secrets.json" # You'll need to create this file
-SCOPES = ['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile']
+#CLIENT_SECRETS_FILE = "client_secrets.json" # You'll need to create this file
+#SCOPES = ['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile']
 
-def google_login():
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
-        scopes=SCOPES,
-        redirect_uri=st.secrets["google_oauth"]["redirect_uri"]
-    )
+# def google_login():
+#     flow = Flow.from_client_secrets_file(
+#         CLIENT_SECRETS_FILE,
+#         scopes=SCOPES,
+#         redirect_uri=st.secrets["google_oauth"]["redirect_uri"]
+#     )
 
-    authorization_url, state = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true'
-    )
+#     authorization_url, state = flow.authorization_url(
+#         access_type='offline',
+#         include_granted_scopes='true'
+#     )
 
-    st.session_state['google_oauth_state'] = state
-    st.session_state['google_oauth_auth_url'] = authorization_url
-    return authorization_url
+#     st.session_state['google_oauth_state'] = state
+#     st.session_state['google_oauth_auth_url'] = authorization_url
+#     return authorization_url
 
 # --- Class and function definitions ---
 class BCIDataManager:
