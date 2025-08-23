@@ -13,9 +13,6 @@ from typing import Dict, List, Optional
 import logging
 import google.generativeai as genai
 import os
-from google_auth_oauthlib.flow import Flow
-from google.oauth2 import credentials
-
 # --- Initialize session state variables at the very top ---
 if 'is_connected' not in st.session_state:
     st.session_state.is_connected = False
@@ -31,17 +28,6 @@ if 'prediction_history' not in st.session_state:
     st.session_state.prediction_history = []
 if 'active_tab' not in st.session_state:
     st.session_state.active_tab = "Dashboard"
-# Authentication state variables
-if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
-if 'username' not in st.session_state:
-    st.session_state.username = ""
-if 'show_login' not in st.session_state:
-    st.session_state.show_login = True
-if 'show_register' not in st.session_state:
-    st.session_state.show_register = False
-if 'is_admin' not in st.session_state:
-    st.session_state.is_admin = False
 
 # Function to handle tab switching from HTML navigation
 def nav_tab_callback():
@@ -322,25 +308,7 @@ if GEMINI_AVAILABLE:
 else:
     model = None
 
-# Google OAuth Configuration
-#CLIENT_SECRETS_FILE = "client_secrets.json" # You'll need to create this file
-#SCOPES = ['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile']
 
-# def google_login():
-#     flow = Flow.from_client_secrets_file(
-#         CLIENT_SECRETS_FILE,
-#         scopes=SCOPES,
-#         redirect_uri=st.secrets["google_oauth"]["redirect_uri"]
-#     )
-
-#     authorization_url, state = flow.authorization_url(
-#         access_type='offline',
-#         include_granted_scopes='true'
-#     )
-
-#     st.session_state['google_oauth_state'] = state
-#     st.session_state['google_oauth_auth_url'] = authorization_url
-#     return authorization_url
 
 # --- Class and function definitions ---
 class BCIDataManager:
@@ -1995,21 +1963,7 @@ def main():
     # API Base URL
     API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
 
-    # Google OAuth Callback Handling
-    query_params = st.experimental_get_query_params()
-    if "code" in query_params and 'google_oauth_state' in st.session_state:
-        code = query_params["code"][0]
-        state = st.session_state['google_oauth_state']
-
-        flow = Flow.from_client_secrets_file(
-            CLIENT_SECRETS_FILE,
-            scopes=SCOPES,
-            state=state,
-            redirect_uri=st.secrets["google_oauth"]["redirect_uri"]
-        )
-
-        try:
-            flow.fetch_token(code=code)
+    
             credentials = flow.credentials
             st.session_state.authenticated = True
             st.session_state.username = credentials.id_token.get('name', 'Google User')
