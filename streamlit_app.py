@@ -37,6 +37,7 @@ def nav_tab_callback():
             st.session_state.active_tab = tab_data['tab']
             st.rerun()
 
+
 # Configure page
 st.set_page_config(
     page_title="Neural BCI Dashboard",
@@ -1964,18 +1965,8 @@ def main():
     API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
 
     
-            credentials = flow.credentials
-            st.session_state.authenticated = True
-            st.session_state.username = credentials.id_token.get('name', 'Google User')
-            st.session_state.access_token = credentials.token
-            st.session_state.token_type = "Bearer"
-            st.session_state.is_admin = False # Or fetch from backend if applicable
-            st.success(f"Logged in as {st.session_state.username} with Google!")
-            st.experimental_set_query_params()
-            st.rerun()
-        except Exception as e:
-            st.error(f"Google login failed: {e}")
-            st.experimental_set_query_params()
+
+
             st.rerun()
 
     # --- Authentication Functions ---
