@@ -1949,63 +1949,21 @@ def main():
         st.session_state.active_tab = "Dashboard"
         # Authentication state variables
 
-    if 'authenticated' not in st.session_state:
-        st.session_state.authenticated = False
-
-    if 'username' not in st.session_state:
-        st.session_state.username = ""
-    if 'show_login' not in st.session_state:
-        st.session_state.show_login = True
-    if 'show_register' not in st.session_state:
-        st.session_state.show_register = False
-    if 'is_admin' not in st.session_state:
-        st.session_state.is_admin = False
-
     # API Base URL
     API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
 
-    
 
-
-            st.rerun()
-
-    # --- Authentication Functions ---
-    def login_user(username, password):
+        st.error(f"Registration failed: Status Code: {response.status_code}, Response Text: {response.text}")
+    if response.status_code == 201:
+        st.success("Registration successful! Logging you in...")
+        login_user(username, password)
+    else:
         try:
-            response = requests.post(f"{API_BASE_URL}/token", data={"username": username, "password": password})
-            if response.status_code == 200:
-                token_data = response.json()
-                st.session_state.authenticated = True
-                st.session_state.username = username
-                st.session_state.access_token = token_data["access_token"]
-                st.session_state.token_type = token_data["token_type"]
-                st.session_state.is_admin = token_data.get("is_admin", False) # Get admin status
-
-                st.rerun()
-            else:
-                st.error(f"Login failed: {response.json().get('detail', 'Invalid credentials')}")
-        except requests.exceptions.ConnectionError:
-            st.error("Could not connect to the backend API. Please ensure it is running.")
-
-    def register_user(username, email, password):
-        try:
-            response = requests.post(f"{API_BASE_URL}/register", json={"username": username, "email": email, "password": password})
-            if response.status_code == 200:
-                st.success("Registration successful! Logging you in...")
-                login_user(username, password)
-
-            else:
-                st.error(f"Registration failed: Status Code: {response.status_code}, Response Text: {response.text}")
-            if response.status_code == 201:
-                st.success("Registration successful! Logging you in...")
-                login_user(username, password)
-            else:
-                try:
-                    st.error(f"Registration failed: {response.json().get('detail', 'Error during registration')}")
-                except requests.exceptions.JSONDecodeError:
-                    st.error("Registration failed: Could not decode JSON response from server.")
-        except requests.exceptions.ConnectionError:
-            st.error("Could not connect to the backend API. Please ensure it is running.")
+            st.error(f"Registration failed: {response.json().get('detail', 'Error during registration')}")
+        except requests.exceptions.JSONDecodeError:
+            st.error("Registration failed: Could not decode JSON response from server.")
+except requests.exceptions.ConnectionError:
+    st.error("Could not connect to the backend API. Please ensure it is running.")
 
     def logout_user():
         st.session_state.authenticated = False
