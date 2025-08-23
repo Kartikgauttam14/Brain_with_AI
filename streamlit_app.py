@@ -1953,7 +1953,7 @@ def main():
     API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
 
 
-        st.error(f"Registration failed: Status Code: {response.status_code}, Response Text: {response.text}")
+     #   st.error(f"Registration failed: Status Code: {response.status_code}, Response Text: {response.text}")
     if response.status_code == 201:
         st.success("Registration successful! Logging you in...")
         login_user(username, password)
@@ -1962,9 +1962,8 @@ def main():
             st.error(f"Registration failed: {response.json().get('detail', 'Error during registration')}")
         except requests.exceptions.JSONDecodeError:
             st.error("Registration failed: Could not decode JSON response from server.")
-except requests.exceptions.ConnectionError:
-    st.error("Could not connect to the backend API. Please ensure it is running.")
-
+        except requests.exceptions.ConnectionError:
+            st.error("Could not connect to the backend API. Please ensure it is running.")
     def logout_user():
         st.session_state.authenticated = False
         st.session_state.username = ""
