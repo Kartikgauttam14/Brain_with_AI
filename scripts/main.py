@@ -18,6 +18,7 @@ import threading
 import time
 import pickle
 from sklearn.svm import SVC
+import argparse
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
@@ -381,7 +382,11 @@ websocket_thread = threading.Thread(target=start_websocket_server, daemon=True)
 websocket_thread.start()
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    parser = argparse.ArgumentParser(description="Run the FastAPI backend server.")
+    parser.add_argument("--port", type=int, default=8001, help="Port to run the FastAPI server on.")
+    args = parser.parse_args()
+
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
 
     is_connected: bool
     signal_strength: float
@@ -1241,11 +1246,18 @@ async def get_session_analytics(
         "min_processing_time_ms": min(processing_times)
     }
 
+import argparse
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run the FastAPI backend server.")
+    parser.add_argument("--port", type=int, default=8001, help="Port to run the FastAPI server on.")
+    args = parser.parse_args()
+
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=args.port,
         reload=True,
         log_level="info"
     )

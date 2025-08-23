@@ -28,6 +28,8 @@ if 'prediction_history' not in st.session_state:
     st.session_state.prediction_history = []
 if 'active_tab' not in st.session_state:
     st.session_state.active_tab = "Dashboard"
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
 
 # Function to handle tab switching from HTML navigation
 def nav_tab_callback():
@@ -285,8 +287,8 @@ div[data-testid="stForm"] {
 # The dashboard elements have been moved to show_dashboard_tab() function
 
 # API and WebSocket URLs (must be above BCIDataManager)
-API_BASE_URL = "http://localhost:8000/api"
-WS_URL = "ws://localhost:8000/ws/realtime"
+API_BASE_URL = "http://localhost:8001/api"
+WS_URL = "ws://localhost:8001/ws/realtime"
 
 # Configure Google Gemini API
 GOOGLE_API_KEY = "Paste your Google API key here"
@@ -1922,17 +1924,30 @@ def show_auth_panel():
                         st.error("Passwords do not match")
                     else:
                         if data_manager.register(new_username, email, new_password):
-                            st.success("Registration successful! Please login.")
-                            time.sleep(1)
-                            st.rerun()
-                        else:
-                            st.error("Registration failed. Username or email may already be taken.")
+                            response = data_manager.register(new_username, email, new_password)
+                            if response and response.status_code == 201:
+                                st.success("Registration successful! Logging you in...")
+                                login_user(new_username, new_password)
+                            else:
+                                try:
+                                    st.error(f"Registration failed: {response.json().get('detail', 'Error during registration')}")
+                                except requests.exceptions.JSONDecodeError:
+                                    st.error("Registration failed: Could not decode JSON response from server.")
+                                except requests.exceptions.ConnectionError:
+                                    st.error("Could not connect to the backend API. Please ensure it is running.")
                 else:
                     st.warning("Please fill in all fields")
 
 # --- Main layout with all tab functionality ---
+def login_user(username, password):
+    st.session_state.authenticated = True
+
 def main():
     # Initialize session state variables
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+    if 'username' not in st.session_state:
+        st.session_state.username = ""
     if 'is_connected' not in st.session_state:
         st.session_state.is_connected = False
     if 'signal_strength' not in st.session_state:
@@ -1951,19 +1966,6 @@ def main():
 
     # API Base URL
     API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
-
-
-     #   st.error(f"Registration failed: Status Code: {response.status_code}, Response Text: {response.text}")
-    if response.status_code == 201:
-        st.success("Registration successful! Logging you in...")
-        login_user(username, password)
-    else:
-        try:
-            st.error(f"Registration failed: {response.json().get('detail', 'Error during registration')}")
-        except requests.exceptions.JSONDecodeError:
-            st.error("Registration failed: Could not decode JSON response from server.")
-        except requests.exceptions.ConnectionError:
-            st.error("Could not connect to the backend API. Please ensure it is running.")
     def logout_user():
         st.session_state.authenticated = False
         st.session_state.username = ""

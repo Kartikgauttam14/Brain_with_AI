@@ -2,19 +2,28 @@ import subprocess
 import sys
 import os
 import time
+
+venv_python = os.path.join(os.getcwd(), "venv_stable", "Scripts", "python.exe")
+import subprocess
 import threading
 
 def install_requirements():
     """Install required packages for both frontend and backend"""
     try:
+        venv_python = os.path.join(os.getcwd(), "venv_stable", "Scripts", "python.exe")
+        
         print("📦 Installing frontend requirements...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+        subprocess.check_call([venv_python, "-m", "pip", "install", "-r", "requirements.txt"])
         print("✅ Frontend requirements installed successfully!")
         
         print("📦 Installing backend requirements...")
         backend_req_path = os.path.join("scripts", "requirements.txt")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", backend_req_path])
+        subprocess.check_call([venv_python, "-m", "pip", "install", "-r", backend_req_path])
         print("✅ Backend requirements installed successfully!")
+        
+        print("📦 Installing PyJWT...")
+        subprocess.check_call([venv_python, "-m", "pip", "install", "PyJWT"])
+        print("✅ PyJWT installed successfully!")
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ Error installing requirements: {e}")
@@ -24,8 +33,9 @@ def run_backend():
     """Run the FastAPI backend server"""
     try:
         backend_path = os.path.join(os.getcwd(), "scripts", "main.py")
-        print(f"🚀 Starting backend server from {backend_path}")
-        subprocess.run([sys.executable, backend_path])
+        backend_command = [venv_python, backend_path, "--port", "8001"]
+        print(f"🚀 Starting backend server with command: {' '.join(backend_command)}")
+        subprocess.run(backend_command) # Pass port as argument
     except KeyboardInterrupt:
         print("\n🛑 Backend stopped by user")
     except Exception as e:
@@ -56,15 +66,15 @@ if __name__ == "__main__":
         
         # Give the backend time to start up
         print("⏳ Waiting for backend to initialize...")
+        time.sleep(2) # Add a 2-second delay
         time.sleep(5)
         
-        print("\n📡 Backend API running at: http://localhost:8000")
-        print("📡 API Documentation: http://localhost:8000/docs")
+        print("\n📡 Backend API running at: http://localhost:8001")
+        print("📡 API Documentation: http://localhost:8001/docs")
         print("📡 Frontend will open in your default browser at: http://localhost:8501")
         print("\n💡 Press Ctrl+C to stop both servers")
         print("=" * 50)
         
-        # Run the frontend application (this will block until it exits)
         run_streamlit()
     else:
         print("❌ Failed to install requirements. Please check your Python environment.")
