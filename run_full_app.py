@@ -13,24 +13,25 @@ def install_requirements():
         venv_python = os.path.join(os.getcwd(), "venv_stable", "Scripts", "python.exe")
         
         print("🔄 Upgrading pip in venv_stable...")
-        subprocess.check_call([venv_python, "-m", "pip", "install", "--upgrade", "pip"])
+        subprocess.check_call([venv_python, "-m", "pip", "install", "--upgrade", "pip"], stderr=subprocess.PIPE)
         print("✅ pip upgraded successfully!")
 
         print("📦 Installing frontend requirements...")
-        subprocess.check_call([venv_python, "-m", "pip", "install", "-r", "requirements.txt"])
+        subprocess.check_call([venv_python, "-m", "pip", "install", "-r", "requirements.txt"], stderr=subprocess.PIPE)
         print("✅ Frontend requirements installed successfully!")
         
         print("📦 Installing backend requirements...")
         backend_req_path = os.path.join("scripts", "requirements.txt")
-        subprocess.check_call([venv_python, "-m", "pip", "install", "-r", backend_req_path])
+        subprocess.check_call([venv_python, "-m", "pip", "install", "-r", backend_req_path], stderr=subprocess.PIPE)
         print("✅ Backend requirements installed successfully!")
         
         print("📦 Installing PyJWT...")
-        subprocess.check_call([venv_python, "-m", "pip", "install", "PyJWT"])
+        subprocess.check_call([venv_python, "-m", "pip", "install", "PyJWT"], stderr=subprocess.PIPE)
         print("✅ PyJWT installed successfully!")
         return True
     except subprocess.CalledProcessError as e:
         print(f"❌ Error installing requirements: {e}")
+        print(f"Stderr: {e.stderr.decode()}")
         return False
 
 def run_backend():
