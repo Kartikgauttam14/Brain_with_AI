@@ -13,9 +13,6 @@ from typing import Dict, List, Optional
 import logging
 import google.generativeai as genai
 import os
-from google_auth_oauthlib.flow import Flow
-from google.oauth2 import credentials
-
 # --- Initialize session state variables at the very top ---
 if 'is_connected' not in st.session_state:
     st.session_state.is_connected = False
@@ -31,17 +28,8 @@ if 'prediction_history' not in st.session_state:
     st.session_state.prediction_history = []
 if 'active_tab' not in st.session_state:
     st.session_state.active_tab = "Dashboard"
-# Authentication state variables
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
-if 'username' not in st.session_state:
-    st.session_state.username = ""
-if 'show_login' not in st.session_state:
-    st.session_state.show_login = True
-if 'show_register' not in st.session_state:
-    st.session_state.show_register = False
-if 'is_admin' not in st.session_state:
-    st.session_state.is_admin = False
 
 # Function to handle tab switching from HTML navigation
 def nav_tab_callback():
@@ -50,6 +38,7 @@ def nav_tab_callback():
         if 'tab' in tab_data:
             st.session_state.active_tab = tab_data['tab']
             st.rerun()
+
 
 # Configure page
 st.set_page_config(
@@ -298,11 +287,11 @@ div[data-testid="stForm"] {
 # The dashboard elements have been moved to show_dashboard_tab() function
 
 # API and WebSocket URLs (must be above BCIDataManager)
-API_BASE_URL = "http://localhost:8000/api"
-WS_URL = "ws://localhost:8000/ws/realtime"
+API_BASE_URL = "http://localhost:8001/api"
+WS_URL = "ws://localhost:8001/ws/realtime"
 
 # Configure Google Gemini API
-GOOGLE_API_KEY = "AIzaSyDofA0FLskiokUWyx7wpyJmjHSrC6msVYI"
+GOOGLE_API_KEY = "Paste your Google API key here"
 
 # Try to import Google Generative AI, handle gracefully if not available
 try:
@@ -322,25 +311,7 @@ if GEMINI_AVAILABLE:
 else:
     model = None
 
-# Google OAuth Configuration
-CLIENT_SECRETS_FILE = "client_secrets.json" # You'll need to create this file
-SCOPES = ['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile']
 
-def google_login():
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
-        scopes=SCOPES,
-        redirect_uri=st.secrets["google_oauth"]["redirect_uri"]
-    )
-
-    authorization_url, state = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true'
-    )
-
-    st.session_state['google_oauth_state'] = state
-    st.session_state['google_oauth_auth_url'] = authorization_url
-    return authorization_url
 
 # --- Class and function definitions ---
 class BCIDataManager:
@@ -1953,17 +1924,30 @@ def show_auth_panel():
                         st.error("Passwords do not match")
                     else:
                         if data_manager.register(new_username, email, new_password):
-                            st.success("Registration successful! Please login.")
-                            time.sleep(1)
-                            st.rerun()
-                        else:
-                            st.error("Registration failed. Username or email may already be taken.")
+                            response = data_manager.register(new_username, email, new_password)
+                            if response and response.status_code == 201:
+                                st.success("Registration successful! Logging you in...")
+                                login_user(new_username, new_password)
+                            else:
+                                try:
+                                    st.error(f"Registration failed: {response.json().get('detail', 'Error during registration')}")
+                                except requests.exceptions.JSONDecodeError:
+                                    st.error("Registration failed: Could not decode JSON response from server.")
+                                except requests.exceptions.ConnectionError:
+                                    st.error("Could not connect to the backend API. Please ensure it is running.")
                 else:
                     st.warning("Please fill in all fields")
 
 # --- Main layout with all tab functionality ---
+def login_user(username, password):
+    st.session_state.authenticated = True
+
 def main():
     # Initialize session state variables
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+    if 'username' not in st.session_state:
+        st.session_state.username = ""
     if 'is_connected' not in st.session_state:
         st.session_state.is_connected = False
     if 'signal_strength' not in st.session_state:
@@ -1980,88 +1964,8 @@ def main():
         st.session_state.active_tab = "Dashboard"
         # Authentication state variables
 
-    if 'authenticated' not in st.session_state:
-        st.session_state.authenticated = False
-
-    if 'username' not in st.session_state:
-        st.session_state.username = ""
-    if 'show_login' not in st.session_state:
-        st.session_state.show_login = True
-    if 'show_register' not in st.session_state:
-        st.session_state.show_register = False
-    if 'is_admin' not in st.session_state:
-        st.session_state.is_admin = False
-
     # API Base URL
     API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
-
-    # Google OAuth Callback Handling
-    query_params = st.experimental_get_query_params()
-    if "code" in query_params and 'google_oauth_state' in st.session_state:
-        code = query_params["code"][0]
-        state = st.session_state['google_oauth_state']
-
-        flow = Flow.from_client_secrets_file(
-            CLIENT_SECRETS_FILE,
-            scopes=SCOPES,
-            state=state,
-            redirect_uri=st.secrets["google_oauth"]["redirect_uri"]
-        )
-
-        try:
-            flow.fetch_token(code=code)
-            credentials = flow.credentials
-            st.session_state.authenticated = True
-            st.session_state.username = credentials.id_token.get('name', 'Google User')
-            st.session_state.access_token = credentials.token
-            st.session_state.token_type = "Bearer"
-            st.session_state.is_admin = False # Or fetch from backend if applicable
-            st.success(f"Logged in as {st.session_state.username} with Google!")
-            st.experimental_set_query_params()
-            st.rerun()
-        except Exception as e:
-            st.error(f"Google login failed: {e}")
-            st.experimental_set_query_params()
-            st.rerun()
-
-    # --- Authentication Functions ---
-    def login_user(username, password):
-        try:
-            response = requests.post(f"{API_BASE_URL}/token", data={"username": username, "password": password})
-            if response.status_code == 200:
-                token_data = response.json()
-                st.session_state.authenticated = True
-                st.session_state.username = username
-                st.session_state.access_token = token_data["access_token"]
-                st.session_state.token_type = token_data["token_type"]
-                st.session_state.is_admin = token_data.get("is_admin", False) # Get admin status
-
-                st.rerun()
-            else:
-                st.error(f"Login failed: {response.json().get('detail', 'Invalid credentials')}")
-        except requests.exceptions.ConnectionError:
-            st.error("Could not connect to the backend API. Please ensure it is running.")
-
-    def register_user(username, email, password):
-        try:
-            response = requests.post(f"{API_BASE_URL}/register", json={"username": username, "email": email, "password": password})
-            if response.status_code == 200:
-                st.success("Registration successful! Logging you in...")
-                login_user(username, password)
-
-            else:
-                st.error(f"Registration failed: Status Code: {response.status_code}, Response Text: {response.text}")
-            if response.status_code == 201:
-                st.success("Registration successful! Logging you in...")
-                login_user(username, password)
-            else:
-                try:
-                    st.error(f"Registration failed: {response.json().get('detail', 'Error during registration')}")
-                except requests.exceptions.JSONDecodeError:
-                    st.error("Registration failed: Could not decode JSON response from server.")
-        except requests.exceptions.ConnectionError:
-            st.error("Could not connect to the backend API. Please ensure it is running.")
-
     def logout_user():
         st.session_state.authenticated = False
         st.session_state.username = ""
