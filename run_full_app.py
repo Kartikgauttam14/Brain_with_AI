@@ -12,6 +12,10 @@ def install_requirements():
     try:
         venv_python = os.path.join(os.getcwd(), "venv_stable", "Scripts", "python.exe")
         
+        print("🔄 Upgrading pip in venv_stable...")
+        subprocess.check_call([venv_python, "-m", "pip", "install", "--upgrade", "pip"])
+        print("✅ pip upgraded successfully!")
+
         print("📦 Installing frontend requirements...")
         subprocess.check_call([venv_python, "-m", "pip", "install", "-r", "requirements.txt"])
         print("✅ Frontend requirements installed successfully!")
@@ -45,7 +49,7 @@ def run_streamlit():
     """Run the Streamlit frontend application"""
     try:
         print("🚀 Starting Streamlit frontend...")
-        subprocess.run([sys.executable, "-m", "streamlit", "run", "streamlit_app.py"])
+        subprocess.run([venv_python, "-m", "streamlit", "run", "streamlit_app.py"])
     except KeyboardInterrupt:
         print("\n🛑 Frontend stopped by user")
     except Exception as e:
